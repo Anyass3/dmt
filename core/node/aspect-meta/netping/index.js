@@ -1,4 +1,8 @@
-import { log, isMainDevice, isDevUser, device, apMode, isRPi } from 'dmt/common';
+import { log, device, apMode, isRPi, isMainDevice, isMobileDevice } from 'dmt/common';
+
+import os from 'os';
+
+const BOOT_WAIT_SECONDS = 30;
 
 import { desktop } from 'dmt/notify';
 
@@ -8,27 +12,24 @@ const CLOUDFLARE_DNS = '1.0.0.1';
 const DEFAULT_TTL = 20;
 const NOTIFICATION_GROUP_PREFIX = `${device().id}_connectivity`;
 
-let connectionLostCount = 0;
-
 function reportConnectivityOnLan() {
-  return isRPi();
+  return isRPi() || ['labstore', 'elmstore'].includes(device().id);
 }
 
 function init(program) {
-  if (!['dnevna', 'balkon'].includes(device().id)) {
-    return;
-  }
-
-  const executePing = new ExecutePing({ program, target: CLOUDFLARE_DNS, prefix: 'connectivity' });
+  const wanConnectivity = new ExecutePing({ program, target: CLOUDFLARE_DNS, prefix: 'connectivity' });
 
   const localConnectivity = new ExecutePing({ program, prefix: 'localConnectivity' });
 
-  executePing.on('connection_lost', ({ code }) => {
-    connectionLostCount += 1;
-
+  wanConnectivity.on('connection_lost', ({ code }) => {
     const color = '#e34042';
 
-    const noConnectivityMsg = '✖ Internet unreachable';
+    const prefix = isMainDevice() ? '❌ ' : '';
+    const noConnectivityMsg = `${prefix}Internet unreachable — ping fail ${code || ''}`.trim();
+
+    if (!isMobileDevice()) {
+      log.red(noConnectivityMsg);
+    }
 
     if (reportConnectivityOnLan()) {
       program.nearbyNotification({ msg: noConnectivityMsg, ttl: DEFAULT_TTL, color, group: `${NOTIFICATION_GROUP_PREFIX}_unreachable` });
@@ -37,8 +38,13 @@ function init(program) {
     }
   });
 
-  executePing.on('connection_resumed', () => {
-    const connResumedMsg = 'Internet connection resumed';
+  wanConnectivity.on('connection_resumed', () => {
+    const prefix = isMainDevice() ? '✅ ' : '';
+    const connResumedMsg = `${prefix}Internet connection resumed`;
+
+    if (!isMobileDevice()) {
+      log.green(`${connResumedMsg}`);
+    }
 
     if (reportConnectivityOnLan()) {
       program.nearbyNotification({ msg: connResumedMsg, ttl: DEFAULT_TTL, color: '#E9D872', group: `${NOTIFICATION_GROUP_PREFIX}_resumed` });
@@ -52,10 +58,13 @@ function init(program) {
   localConnectivity.on('connection_lost', ({ code }) => {
     const color = '#FF7A2C';
 
-    const noConnectivityMsg = '✖ Router unreachable';
+    const noConnectivityMsg = `✖ Router unreachable — ping fail ${code || ''}`.trim();
+
+    if (!isMobileDevice()) {
+      log.red(noConnectivityMsg);
+    }
 
     if (reportConnectivityOnLan()) {
-      log.red(`${noConnectivityMsg} — ping fail ${code || ''}`.trim());
       program.nearbyNotification({ msg: noConnectivityMsg, ttl: 20, color, group: `${NOTIFICATION_GROUP_PREFIX}_local_connectivity` });
     } else {
       desktop.notify(noConnectivityMsg);
@@ -64,6 +73,10 @@ function init(program) {
 
   localConnectivity.on('connection_resumed', () => {
     const connResumedMsg = 'Router connection resumed';
+
+    if (!isMobileDevice()) {
+      log.green(`${connResumedMsg}`);
+    }
 
     if (reportConnectivityOnLan()) {
       program.nearbyNotification({ msg: connResumedMsg, ttl: 20, color: '#F1A36B', group: `${NOTIFICATION_GROUP_PREFIX}_local_connectivity` });
@@ -77,9 +90,12 @@ function init(program) {
   let count = 0;
 
   program.on(interval, () => {
+    localConnectivity.cleanup();
+    wanConnectivity.cleanup();
+
     if (!apMode()) {
-      if (count > 0) {
-        executePing.ping().then(() => {
+      if (count > 0 && os.uptime() > BOOT_WAIT_SECONDS) {
+        wanConnectivity.ping().then(() => {
           if (program.store('device').get('connectivityProblem')) {
             localConnectivity.ping();
           }

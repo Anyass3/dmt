@@ -60,7 +60,6 @@
     "node-wifi": "^2.0.12",
     "nodejs-tcp-ping": "^1.0.3",
     "nodemailer": "^6.4.6",
-    "pi-camera-connect": "^0.2.0",
     "quantum-generator": "^1.9.3",
     "redis": "^2.8.0",
     "retrace": "^1.0.0",

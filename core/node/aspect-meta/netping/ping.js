@@ -1,9 +1,5 @@
 import ping from 'nodejs-tcp-ping';
 
-import { log, stopwatch, promiseTimeout, colors } from 'dmt/common';
-
-let counter = 0;
-
 export default function doPing(target, TIMEOUT = 1500) {
   return new Promise((success, reject) => {
     const pingPromise = ping.tcpPing({

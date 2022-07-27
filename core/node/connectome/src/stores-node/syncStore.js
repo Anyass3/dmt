@@ -1,4 +1,4 @@
-import { EventEmitter, stopwatch } from '../utils/index.js';
+import { EventEmitter } from '../utils/index.js';
 
 import clone from './lib/clone.js';
 
@@ -125,11 +125,8 @@ export default class SyncStore extends EventEmitter {
       return;
     }
 
-    const start = stopwatch.start();
-
     const diff = getDiff(this.lastAnnouncedState, muteAnnounce(this.slots, remoteState));
 
-    const duration = stopwatch.stop(start);
     if (diff) {
       this.sendRemote({ diff });
       this.stateChangesCount += 1;

@@ -7,21 +7,21 @@ class MissingFiles {
     this.playlist = playlist;
   }
 
-  detect(songList) {
-    const entries = songList.filter(song => !song.asyncCheckingMissingFile);
+  rescan(songList) {
+    const missingEntries = songList.filter(song => song.error && !song.asyncCheckingMissingFile);
 
-    if (entries.length == 0) {
+    if (missingEntries.length == 0) {
       return;
     }
 
-    entries.forEach(song => {
+    missingEntries.forEach(song => {
       song.asyncCheckingMissingFile = true;
     });
 
     processBatch({
-      entries,
+      entries: missingEntries,
       asyncMap,
-      batchSize: 100,
+      batchSize: 20,
       afterAsyncResultsBatch: results => {
         results.forEach(song => {
           delete song.asyncCheckingMissingFile;

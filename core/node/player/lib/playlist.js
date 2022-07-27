@@ -482,8 +482,22 @@ class Playlist {
     }
   }
 
-  detectMissingMedia() {
-    this.missingFiles.detect(this.playlist);
+  rescanMissingMedia() {
+    this.missingFiles.rescan(this.playlist);
+  }
+
+  markError(song) {
+    if (!song.error) {
+      song.error = true;
+      this.broadcastPlaylistState();
+    }
+  }
+
+  unmarkError(song) {
+    if (song.error) {
+      delete song.error;
+      this.broadcastPlaylistState();
+    }
   }
 
   removeMissingMedia() {

@@ -21,8 +21,10 @@ export default function createProgramStore(program) {
       // - disable "dangerous options" -- "Have you tried"
       serverMode: def.isTruthy(device.serverMode),
       subnet: device.subnet,
+      lanServer: dmt.isLanServer(),
       devMachine: dmt.isDevMachine(),
       devUser: dmt.isDevUser(),
+      devPanel: dmt.isDevPanel(),
       // connectivity
       apMode: apMode(),
       apInfo: apMode() ? apInfo() : undefined,
@@ -77,8 +79,11 @@ export default function createProgramStore(program) {
       'sysinfo',
       'services',
       'gui',
-      // todo: move to the app ... and create app state functions!
+      // todo: move to the app ... and create app state functions! (??)
       'blinds',
+      'entryDoor',
+      'parkingDoor',
+      'lights',
       'deviceRestarters'
     ],
     schemaVersion: STATE_SCHEMA_VERSION,

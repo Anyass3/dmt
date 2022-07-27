@@ -2,8 +2,6 @@ import os from 'os';
 
 import { services, log, colors } from 'dmt/common';
 
-import handleErrorFromGui from './helpers/handleErrorFromGui';
-
 import PlayerRemoteTarget from './objects/player';
 
 function onConnect({ program, channel }) {
@@ -11,30 +9,7 @@ function onConnect({ program, channel }) {
 
   loadInitialView(channel);
 
-  channel.on('action', ({ action, namespace, payload }) => {
-    if (namespace == 'gui_errors') {
-      handleErrorFromGui(payload);
-      return;
-    }
-
-    if (action == 'show_frontend_log') {
-      program.store('device').update({ showFrontendLog: true });
-      return;
-    }
-
-    if (action == 'close_frontend_log') {
-      program.store('device').removeKey('showFrontendLog');
-      return;
-    }
-
-    log.gray(`Received user action ${colors.cyan(namespace)}::${colors.green(action)}`);
-    if (payload) {
-      log.gray('Payload: ', JSON.stringify(payload, null, 2));
-    }
-
-    // different parts of the system (core or through included middleware / dmt app hooks)
-    program.emit('dmt_gui_action', { action, namespace, payload });
-  });
+  channel.on('action', (...args) => program.userAction(...args));
 }
 
 function loadInitialView(channel) {

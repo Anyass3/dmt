@@ -1,7 +1,5 @@
 import EventEmitter from 'events';
 
-import { log, stopwatch, colors, isMainDevice, isDevUser, device, apMode } from 'dmt/common';
-
 import ping from './ping';
 
 export default class ExecutePing extends EventEmitter {
@@ -27,14 +25,12 @@ export default class ExecutePing extends EventEmitter {
     const connectivityResumedAt = this.deviceStore.get(`${this.prefix}ResumedAt`);
 
     if (connectivityResumed && Date.now() - connectivityResumedAt > 10 * 1000) {
-      this.deviceStore.removeKey(`${this.prefix}Resumed`);
+      this.deviceStore.removeKeys([`${this.prefix}Resumed`, `${this.prefix}ResumedAt`], { announce: false });
     }
   }
 
   ping() {
     return new Promise((success, reject) => {
-      this.cleanup();
-
       const target = this.target || this.deviceStore.get('gatewayIp');
 
       if (target) {
